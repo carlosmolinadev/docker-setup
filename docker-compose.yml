@@ -1,0 +1,79 @@
+services:
+  php: 
+    build: 
+      context: ./php
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        - git_email=${git_email}
+        - git_name=${git_name}
+    # command: tail -F anything
+    ports:
+      - "8000:8000"
+      - "5173:5173"
+    volumes:
+      - php-data:/projects
+      - vscode-server-php:/root/.vscode-server
+      - /home/carlos/.ssh/id_rsa.pub:/home/.ssh/id_rsa.pub
+      - /home/carlos/.ssh/id_rsa:/home/.ssh/id_rsa
+    networks: php artisan queue:work --sleep=3 --tries=3 --max-time=3600 
+      - db_network
+      - cache_network
+  # cache:
+  #   image: memcached:1.6.17-alpine
+  #   ports:
+  #     - "11211:11211"
+  #   command: memcached -m 64
+  #   networks:
+  #     - cache_network
+  redis:
+    image: redis:7.4.1-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - cache_network
+  # c: 
+  #   build: 
+  #     context: ./c++
+  #     dockerfile: Dockerfile
+  #     target: dev
+  #     args:
+  #       - git_email=${git_email}
+  #       - git_name=${git_name}
+  #   # command: tail -F anything
+  #   ports:
+  #     - "8001:8000"
+  #   volumes:
+  #     - c-data:/projects
+  #     - vscode-server-c:/root/.vscode-server
+  #     - /home/carlos/.ssh/id_rsa.pub:/home/.ssh/id_rsa.pub
+  #   networks:
+  #     - db_network
+  db:
+    image: 'postgres:14-alpine'
+    restart: always
+    environment:
+      POSTGRES_USER: alpine
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres:/var/lib/postgresql/data/
+    networks:
+      - db_network
+volumes:
+  php-data:
+    name: php-data
+  c-data:
+    name: c-data
+  vscode-server-php:
+    name: vscode-server-php 
+  vscode-server-c:
+    name: vscode-server-c 
+  postgres:
+  redis-data:
+networks:
+  db_network:
+  cache_network:
